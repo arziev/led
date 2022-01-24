@@ -1,0 +1,45 @@
+import rospy
+from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Int16MultiArray
+
+import time
+class LedBlink():
+    def __init__(self):
+        self.pub = rospy.Publisher("/toggle_led",int16MultiArray, queue_size=1)
+        self.number_of_LEDs = 24
+        self.minrenge = 0.2
+        self.midrange = 0.8
+        self.maxrange = 1
+        self.minimum_of_each_sector_of_laser_scan_array = []
+        self.filled_LED_RGB_array = [0 for i in range(self.number_of_LEDs * 3)]
+        self.minimum_of_each_sector_of_laser_scan_array = [0 for i in range(self.number_of_LEDs)]
+        rospy.Subscriber('/scan', LaserScan, self.laser_callback)
+        rospy.loginfo("init done")
+        
+    def laser_callback(self, msg):
+        for i in range(self.number_of_LEDs):
+            self.minimum_of_each_sector_of_laser_scan_array[i] = min(
+                msg.ranges[i*int(round(len(msg.ranges)/self.number_of_LEDs))
+                    :(i + 1)*int(round(len(msg.ranges)/self.number_of_LEDs))])
+                    
+    def color_callback(self, array_of_minimums):
+        array_of_colors_for_led = []
+        for k in range(len(array_of_minimums)):
+                if 0 <= array_of_minimums[k] < self.minrange:
+                    array_of_colors_for_led.append(255)
+                    array_of_colors_for_led.append()
+                    array_of_colors_for_led.append()
+                elif self.minrange <= array_of_minimums[k] < self.midrange:
+                    array_of_colors_for_led.append(255)
+                    array_of_colors_for_led.append(int(round(
+                        (array_of_minimums[k]-self.minrange)/self.midrange*255)))
+                    array_of_colors_for_led.append(0)
+                elif self.minrange <= array_of_minimums[k] < self.maxrange:
+                    array_of_colors_for_led.append(int(round(
+                        (self.maxrange-array_of_minimums[k])/
+                        (self.maxrange-self.midrange)*255)))
+                    array_of_colors_for_led.append(255)
+                    array_of_colors_for_led.append(0)
+                else:
+                        
+                 
